@@ -3,468 +3,515 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công Cụ Dự Toán BMS Pro v3.2</title>
+    <title>BMS Master Estimator v2.3.1 - Nam Hoàng Controls</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        // Brand Palette: Purple & Teal
-                        brand: {
-                            50: '#f0fdfa',  // Teal 50
-                            100: '#ccfbf1', // Teal 100
-                            500: '#14b8a6', // Teal 500
-                            600: '#0d9488', // Teal 600 (Primary Action)
-                            700: '#0f766e',
-                            800: '#581c87', // Purple 900 (Secondary)
-                            900: '#2e1065', // Deep Purple (Header Base)
+                        nhc: {
+                            navy: '#0f172a',    // Deep Navy (Brand Base)
+                            blue: '#1e40af',    // Brand Blue
+                            gold: '#f59e0b',    // Gold (Action/Highlight)
+                            teal: '#14b8a6',    // Teal (Secondary)
                         }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'slim': '0 2px 10px rgba(0,0,0,0.1)',
                     }
                 }
             }
         }
     </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        :root {
+            --teal: #14b8a6;
+            --navy: #0f172a;
+            --yellow: #f59e0b;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+
+        /* Compact Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        
+        /* Input Reset */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        /* Custom Header Input */
+        .header-project-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s;
+        }
+        .header-project-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #f59e0b;
+            outline: none;
+        }
+
+        /* Logo Bar Animation & Style */
+        .logo-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            padding-bottom: 2px;
+        }
+        .bar {
+            width: 6px;
+            border-radius: 2px;
+            transition: height 0.3s ease;
+        }
+
         @media print {
+            body { background: white !important; -webkit-print-color-adjust: exact; }
             .no-print { display: none !important; }
-            body { background: white; -webkit-print-color-adjust: exact; }
-            .shadow-lg { box-shadow: none !important; }
-            input, select, textarea { border: none !important; background: transparent !important; padding: 0 !important; appearance: none; }
-            input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-            ::placeholder { color: transparent; }
-            .print-hidden-border { border: none !important; }
-            .bg-yellow-50 { background-color: transparent !important; }
-            /* Force gradient print if supported, else fallback */
-            .header-bg { background-color: #2e1065 !important; }
-        }
-        /* Chrome, Safari, Edge, Opera */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        .header-gradient {
-            background: linear-gradient(135deg, #2e1065 0%, #0f766e 100%);
+            .main-col { width: 100% !important; max-width: 100% !important; }
+            .sidebar-col { display: none !important; }
+            input, textarea { border: none !important; resize: none; }
+            .print-bg-header { background-color: #f1f5f9 !important; border-bottom: 2px solid #0f172a; }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+<body class="text-slate-700 flex flex-col min-h-screen">
 
-    <!-- Header with Brand Gradient -->
-    <div class="header-gradient text-white p-6 shadow-lg no-print">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-4">
-                <div class="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                    <i class="fa-solid fa-building-shield text-3xl text-teal-300"></i>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-bold uppercase tracking-wider">Dự Toán BMS Tự Động</h1>
-                    <p class="text-teal-100 text-sm mt-0.5 opacity-90">Smart Auto-Sizing Estimation Tool v3.2</p>
-                </div>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="window.print()" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded shadow transition font-medium backdrop-blur-sm">
-                    <i class="fa-solid fa-print mr-1"></i> Xuất PDF
-                </button>
-                <button onclick="resetPrices()" class="bg-rose-500/90 hover:bg-rose-600 text-white px-4 py-2 rounded shadow transition font-medium">
-                    <i class="fa-solid fa-trash-can mr-1"></i> Xóa Giá
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto p-2 md:p-6">
-        
-        <!-- Project Info -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h3 class="text-lg font-bold text-brand-900 border-b border-gray-100 pb-3 mb-4 flex items-center">
-                <i class="fa-solid fa-circle-info mr-2 text-brand-500"></i> Thông Tin Dự Án
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tên Dự Án</label>
-                    <input type="text" class="w-full bg-gray-50 border-gray-200 border rounded-md p-2.5 text-sm focus:ring-brand-500 focus:border-brand-500 transition" placeholder="Nhập tên dự án...">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Chủ Đầu Tư</label>
-                    <input type="text" class="w-full bg-gray-50 border-gray-200 border rounded-md p-2.5 text-sm focus:ring-brand-500 focus:border-brand-500 transition" placeholder="Nhập tên CĐT...">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Ngày lập</label>
-                    <input type="date" class="w-full bg-gray-50 border-gray-200 border rounded-md p-2.5 text-sm focus:ring-brand-500 focus:border-brand-500 transition text-gray-600" id="dateInput">
-                </div>
-            </div>
-        </div>
-
-        <!-- Cable Calculation Settings -->
-        <div class="bg-brand-50 border border-brand-100 rounded-xl p-4 mb-6 no-print">
-            <h3 class="font-bold text-brand-800 mb-2 flex items-center text-sm">
-                <i class="fa-solid fa-ruler-combined mr-2"></i> Tham Số Tính Toán Cáp Tự Động
-            </h3>
-            <div class="flex items-center gap-4">
-                <div class="flex flex-col">
-                    <label class="text-[10px] font-bold text-brand-600 uppercase mb-1">Định mức dây / tín hiệu:</label>
-                    <div class="flex items-center bg-white border border-brand-200 rounded px-3 py-1 w-32 shadow-sm">
-                        <input type="number" id="cableMetric" value="30" class="w-full p-1 text-center font-bold text-brand-600 outline-none" oninput="recalcCables()">
-                        <span class="text-xs text-gray-400 font-medium pl-1">m</span>
-                    </div>
-                </div>
-                <div class="text-xs text-brand-700/70 italic mt-4 pl-4 border-l border-brand-200">
-                    * Hệ thống tự động cập nhật khối lượng cáp (Mục E) khi thay đổi số lượng thiết bị.
-                </div>
-            </div>
-        </div>
-
-        <!-- Cost Table -->
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-8">
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-50 text-gray-600 uppercase font-bold text-xs border-b border-gray-200">
-                        <tr>
-                            <th class="px-3 py-4 text-center w-10">#</th>
-                            <th class="px-4 py-4 min-w-[350px]">Mô Tả & Cấu Hình</th>
-                            <th class="px-2 py-4 text-center w-16">ĐVT</th>
-                            <th class="px-2 py-4 text-center w-32">Số Lượng</th>
-                            <th class="px-4 py-4 text-right w-36">Đơn Giá</th>
-                            <th class="px-4 py-4 text-right w-36">Thành Tiền</th>
-                            <th class="px-4 py-4 w-48 hidden lg:table-cell">Ghi Chú</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-gray-100">
-                        <!-- Rows injected by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Settings & Summary Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- HEADER (Sticky) -->
+    <header class="bg-nhc-navy text-white shadow-slim sticky top-0 z-50 no-print border-b-2 border-nhc-gold h-[70px]">
+        <div class="max-w-[1600px] mx-auto px-4 h-full flex items-center justify-between gap-4">
             
-            <!-- Quick Settings (Left) -->
-            <div class="bg-white rounded-xl border border-gray-200 p-6 h-fit no-print shadow-sm">
-                <h3 class="text-lg font-bold text-brand-900 mb-5 flex items-center">
-                    <i class="fa-solid fa-sliders mr-2 text-brand-500"></i> Cấu Hình Nhanh
-                </h3>
-                <div class="space-y-4">
-                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Gói License Phần Mềm</label>
-                        <div class="relative">
-                            <select id="softwareSelect" onchange="updateSoftwareSpec()" class="w-full bg-white border border-gray-300 text-gray-700 py-2 px-3 rounded leading-tight focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
-                                <option value="500 Points - Basic">500 Points (Basic)</option>
-                                <option value="2,500 Points - Standard">2,500 Points (Standard)</option>
-                                <option value="10,000 Points - Enterprise" selected>10,000 Points (Enterprise)</option>
-                                <option value="25,000 Points - Advanced">25,000 Points (Advanced)</option>
-                                <option value="Unlimited Points - Datacenter">Unlimited Points (Datacenter)</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                <i class="fa-solid fa-chevron-down text-xs"></i>
-                            </div>
-                        </div>
+            <!-- LEFT: BRAND IDENTITY -->
+            <div class="flex items-center gap-3 w-1/3 min-w-fit">
+                <div class="bg-white px-2.5 py-1.5 rounded-lg shadow-sm h-11 flex items-center justify-center shrink-0">
+                    <div class="logo-bars">
+                        <div class="bar" style="height: 14px; background-color: #5eead4;"></div>
+                        <div class="bar" style="height: 20px; background-color: var(--teal);"></div>
+                        <div class="bar" style="height: 30px; background-color: var(--navy);"></div>
+                        <div class="bar" style="height: 40px; background-color: var(--yellow);"></div>
+                        <div class="bar" style="height: 24px; background-color: var(--navy);"></div>
                     </div>
+                </div>
+                <div class="leading-tight flex flex-col justify-center">
+                    <h1 class="font-bold text-lg tracking-wide uppercase text-white leading-none mb-0.5">Nam Hoàng Controls</h1>
+                    <div class="text-[10px] text-nhc-teal font-semibold tracking-wider uppercase font-mono">15 YEARS EXPERIENCE IN BMS & T&C</div>
                 </div>
             </div>
 
-            <!-- Financial Summary (Right) -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 relative overflow-hidden">
-                <!-- Decorative BG -->
-                <div class="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-full -mr-16 -mt-16 opacity-50 pointer-events-none"></div>
-                
-                <h3 class="text-lg font-bold text-brand-900 border-b border-gray-100 pb-3 mb-4 flex items-center">
-                    <i class="fa-solid fa-file-invoice-dollar mr-2 text-brand-500"></i> Tổng Hợp Chi Phí
-                </h3>
-                
-                <div class="space-y-3 relative z-10">
-                    <div class="flex justify-between items-center py-1">
-                        <span class="text-gray-600 font-medium">1. Tổng Vật Tư & Thiết Bị</span>
-                        <span class="font-bold text-gray-900 text-lg" id="sumEquipment">0</span>
-                    </div>
-
-                    <!-- Adjustable Rates -->
-                    <div class="bg-gray-50 p-4 rounded-lg space-y-3 border border-gray-100">
-                        <div class="flex justify-between items-center group">
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-gray-600 group-hover:text-brand-600 transition">2. Nhân công & Lắp đặt</span>
-                                <div class="flex items-center bg-white border border-gray-200 rounded px-2 w-16 h-7 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
-                                    <input type="number" id="installRate" value="15" class="w-full bg-transparent text-right text-sm font-bold text-brand-600 outline-none" oninput="calculateTotal()">
-                                    <span class="text-xs text-gray-400 ml-0.5">%</span>
-                                </div>
-                            </div>
-                            <span class="font-medium text-gray-800" id="sumInstall">0</span>
-                        </div>
-
-                        <div class="flex justify-between items-center group">
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-gray-600 group-hover:text-brand-600 transition">3. Kỹ thuật (Eng, T&C)</span>
-                                <div class="flex items-center bg-white border border-gray-200 rounded px-2 w-16 h-7 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
-                                    <input type="number" id="engRate" value="15" class="w-full bg-transparent text-right text-sm font-bold text-brand-600 outline-none" oninput="calculateTotal()">
-                                    <span class="text-xs text-gray-400 ml-0.5">%</span>
-                                </div>
-                            </div>
-                            <span class="font-medium text-gray-800" id="sumEng">0</span>
-                        </div>
-
-                        <div class="flex justify-between items-center group">
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-gray-600 group-hover:text-brand-600 transition">4. Dự phòng phí</span>
-                                <div class="flex items-center bg-white border border-gray-200 rounded px-2 w-16 h-7 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
-                                    <input type="number" id="contigencyRate" value="5" class="w-full bg-transparent text-right text-sm font-bold text-brand-600 outline-none" oninput="calculateTotal()">
-                                    <span class="text-xs text-gray-400 ml-0.5">%</span>
-                                </div>
-                            </div>
-                            <span class="font-medium text-gray-800" id="sumContingency">0</span>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center pt-5 border-t border-gray-200 mt-2">
-                        <span class="text-lg font-bold text-brand-900 uppercase">Tổng Cộng <span class="text-xs font-normal normal-case text-gray-500">(Chưa VAT)</span></span>
-                        <span class="text-2xl font-bold text-rose-600" id="grandTotal">0</span>
-                    </div>
+            <!-- CENTER: PROJECT INFO -->
+            <div class="flex-1 flex flex-col items-center justify-center h-full max-w-xl">
+                <div class="relative w-full group">
+                    <i class="fa-solid fa-pen absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs group-focus-within:text-nhc-gold transition"></i>
+                    <input type="text" id="headerProjName" placeholder="NHẬP TÊN DỰ ÁN..." 
+                           class="header-project-input w-full rounded py-1.5 pl-8 pr-3 text-sm font-bold text-center text-white placeholder-slate-500 uppercase tracking-wide"
+                           oninput="document.getElementById('projName').value = this.value">
                 </div>
+            </div>
+
+            <!-- RIGHT: ACTIONS -->
+            <div class="flex items-center justify-end gap-3 w-1/3">
+                <div class="hidden xl:flex items-center gap-2 mr-2 text-[10px] text-slate-400 font-mono border-r border-slate-700 pr-3">
+                    <i class="fa-solid fa-code-branch"></i> v2.3.1 Fixed
+                </div>
+                <button onclick="exportToExcel()" class="bg-nhc-gold hover:bg-yellow-400 text-nhc-navy text-xs font-bold px-4 py-2 rounded shadow transition flex items-center gap-2 group">
+                    <i class="fa-solid fa-file-excel group-hover:scale-110 transition-transform"></i>
+                    <span>Export</span>
+                </button>
+                <button onclick="window.print()" class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-white transition" title="Print PDF">
+                    <i class="fa-solid fa-print"></i>
+                </button>
+                <button onclick="resetPrices()" class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-red-400 transition" title="Reset Data">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
             </div>
         </div>
-        
-        <div class="mt-8 text-center text-gray-400 text-xs italic no-print">
-            <p>BMS Estimation Tool v3.2 - Professional Edition</p>
+    </header>
+
+    <!-- PRINT HEADER -->
+    <div class="hidden print:block mb-8 pt-6 px-8 print-bg-header pb-4">
+        <div class="flex justify-between items-end">
+            <div class="flex items-center gap-4">
+                <div class="border-2 border-nhc-navy p-2 rounded">
+                   <div style="display:flex; align-items:flex-end; gap:2px;">
+                        <div style="width:8px; height:18px; background:#5eead4;"></div>
+                        <div style="width:8px; height:26px; background:#14b8a6;"></div>
+                        <div style="width:8px; height:38px; background:#0f172a;"></div>
+                        <div style="width:8px; height:50px; background:#f59e0b;"></div>
+                        <div style="width:8px; height:30px; background:#0f172a;"></div>
+                   </div>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black text-nhc-navy uppercase tracking-tight">Nam Hoàng Controls</h1>
+                    <p class="text-xs font-bold text-slate-600 uppercase tracking-widest">15 YEARS EXPERIENCE IN BMS & T&C</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <h2 class="text-4xl font-black text-slate-800 uppercase">BOQ Estimate</h2>
+                <p class="text-sm font-medium text-nhc-blue mt-1" id="printDateDisplay"></p>
+            </div>
         </div>
     </div>
 
+    <!-- MAIN CONTENT -->
+    <div class="max-w-[1600px] mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT: TABLE -->
+        <div class="lg:col-span-9 main-col space-y-6">
+            <input type="hidden" id="projName">
+            <input type="date" id="dateInput" class="hidden">
+
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border-collapse">
+                        <thead class="bg-slate-800 text-white uppercase font-bold text-[10px] tracking-wide">
+                            <tr>
+                                <th class="px-3 py-3 text-center w-10 border-r border-slate-700">STT</th>
+                                <th class="px-4 py-3 min-w-[350px] border-r border-slate-700">Mô Tả & Thông Số Kỹ Thuật</th>
+                                <th class="px-2 py-3 text-center w-14 border-r border-slate-700">ĐVT</th>
+                                <th class="px-2 py-3 text-center w-24 border-r border-slate-700">Số Lượng</th>
+                                <th class="px-3 py-3 text-right w-32 border-r border-slate-700">Đơn Giá</th>
+                                <th class="px-3 py-3 text-right w-32 border-r border-slate-700">Thành Tiền</th>
+                                <th class="px-3 py-3 w-40 hidden xl:table-cell">Ghi Chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Signatures -->
+            <div class="hidden print:flex justify-between mt-10 px-10">
+                <div class="text-center w-48">
+                    <p class="font-bold text-xs uppercase mb-20">Người Lập</p>
+                    <div class="border-t border-slate-400 pt-1 text-xs italic">Ký & Ghi rõ họ tên</div>
+                </div>
+                <div class="text-center w-48">
+                    <p class="font-bold text-xs uppercase mb-20">Phê Duyệt</p>
+                    <div class="border-t border-slate-400 pt-1 text-xs italic">Giám Đốc / Trưởng phòng Kỹ thuật</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: SIDEBAR -->
+        <div class="lg:col-span-3 sidebar-col space-y-4">
+            <div class="sticky top-[85px] space-y-4">
+                
+                <!-- SUMMARY -->
+                <div class="bg-white rounded-lg shadow-md border-t-4 border-nhc-gold p-5">
+                    <h3 class="font-bold text-nhc-navy text-sm uppercase mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice-dollar text-nhc-gold"></i> Tổng Hợp Chi Phí
+                    </h3>
+                    
+                    <div class="space-y-3 text-xs">
+                        <div class="flex justify-between text-slate-500">
+                            <span>Vật tư (A-E):</span>
+                            <span class="font-bold text-slate-800" id="sumEquipment">0</span>
+                        </div>
+                        <div class="border-t border-slate-100 my-2"></div>
+                        
+                        <div class="grid grid-cols-1 gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Lắp đặt:</span>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="installRate" value="15" oninput="calculateTotal()" class="w-8 text-right font-bold text-nhc-blue bg-slate-50 border-b border-slate-300 focus:outline-none p-0 text-xs">
+                                    <span class="text-[10px] text-slate-400">%</span>
+                                </div>
+                                <span class="font-medium ml-auto" id="sumInstall">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Kỹ thuật (T&C):</span>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="engRate" value="15" oninput="calculateTotal()" class="w-8 text-right font-bold text-nhc-blue bg-slate-50 border-b border-slate-300 focus:outline-none p-0 text-xs">
+                                    <span class="text-[10px] text-slate-400">%</span>
+                                </div>
+                                <span class="font-medium ml-auto" id="sumEng">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Dự phòng:</span>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="contigencyRate" value="5" oninput="calculateTotal()" class="w-8 text-right font-bold text-nhc-blue bg-slate-50 border-b border-slate-300 focus:outline-none p-0 text-xs">
+                                    <span class="text-[10px] text-slate-400">%</span>
+                                </div>
+                                <span class="font-medium ml-auto" id="sumContingency">0</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-dashed border-slate-300 mt-2 bg-slate-50 -mx-5 px-5 pb-1">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Tổng Cộng (VNĐ)</div>
+                            <div class="text-2xl font-black text-nhc-navy tracking-tight" id="grandTotal">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONFIG -->
+                <div class="bg-slate-800 rounded-lg p-4 text-white shadow-md">
+                    <h3 class="font-bold text-nhc-teal text-[10px] uppercase mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-gear"></i> Cấu hình nhanh
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Dây / Điểm (m)</label>
+                            <!-- FIXED: Function call matches JS name -->
+                            <input type="number" id="cableMetric" value="30" oninput="recalcCables()" class="w-full bg-slate-700 border-none rounded px-2 py-1 text-xs font-bold text-white focus:ring-1 focus:ring-nhc-teal">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">License BMS</label>
+                            <select id="softwareSelect" onchange="updateSoftwareSpec()" class="w-full bg-slate-700 border-none rounded px-2 py-1 text-[10px] font-bold text-white focus:ring-1 focus:ring-nhc-teal cursor-pointer">
+                                <option>500 Points - Basic</option>
+                                <option>2,500 Points - Standard</option>
+                                <option selected>10,000 Points - Enterprise</option>
+                                <option>Unlimited Points</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
     <script>
-        // Initial Data Structure
+        const sectionIcons = { "A": "fa-server", "B": "fa-network-wired", "C": "fa-temperature-high", "D": "fa-microchip", "E": "fa-bezier-curve" };
+
         let bmsData = [
-            { header: "A. THIẾT BỊ PHÒNG ĐIỀU KHIỂN TRUNG TÂM" },
-            { id: "srv", name: "Máy chủ BMS (Server)", spec: "Intel Atom E3950, 8GB RAM, 64GB SSD, Win Server 2022", unit: "Bộ", qty: 1, note: "Kèm License Win" },
-            { id: "sw", name: "Phần mềm BMS (License)", spec: "Block 10,000 Points - Enterprise", unit: "Gói", qty: 1, note: "Chọn gói bên dưới" },
-            { id: "core_switch", name: "Switch Mạng Core (L3)", spec: "24 Port Gigabit, 4 SFP+, Layer 3, Managed", unit: "Bộ", qty: 1, note: "Backbone Network" }, // NEW ITEM
-            { id: "ws", name: "Máy tính trạm (Workstation)", spec: "Core i7 Gen12, 16GB RAM, 512GB SSD", unit: "Bộ", qty: 1, note: "" },
-            { id: "monitor", name: "Màn hình hiển thị", spec: "24 inch, Full HD, IPS", unit: "Bộ", qty: 1, note: "" },
-            { id: "ups", name: "UPS Online 3kVA", spec: "Lưu điện 10-15p, sóng sin chuẩn", unit: "Bộ", qty: 1, note: "Cho Server rack" },
-            { id: "printer", name: "Máy in Laser màu", spec: "In mạng LAN, khổ A4", unit: "Bộ", qty: 1, note: "In report" },
+            { header: "A", title: "THIẾT BỊ PHÒNG ĐIỀU KHIỂN TRUNG TÂM" },
+            { id: "srv", name: "Máy chủ BMS (Server)", spec: "Intel Atom E3950, 8GB RAM, 64GB SSD, Win Server 2022\nKèm License Windows bản quyền", unit: "Bộ", qty: 1, note: "Redundant Ready" },
+            { id: "sw", name: "Phần mềm BMS (License)", spec: "Block 10,000 Points - Enterprise Edition\nWeb-based, Mobile App support", unit: "Gói", qty: 1, note: "Update 12 tháng" },
+            { id: "core_switch", name: "Switch Mạng Core (L3)", spec: "24 Port Gigabit, 4 SFP+, Layer 3, Managed", unit: "Bộ", qty: 1, note: "Backbone" },
+            { id: "ws", name: "Máy tính trạm (Workstation)", spec: "Core i7 Gen12, 16GB RAM, 512GB SSD", unit: "Bộ", qty: 1, note: "Operator" },
+            { id: "monitor", name: "Màn hình hiển thị", spec: "24 inch, Full HD, IPS", unit: "Bộ", qty: 2, note: "Dual Monitor" },
+            { id: "ups", name: "UPS Online 3kVA", spec: "True Online, Sinewave\nBackup: 15 mins", unit: "Bộ", qty: 1, note: "Rackmount" },
+            { id: "printer", name: "Máy in Laser màu", spec: "In mạng LAN, khổ A4", unit: "Bộ", qty: 1, note: "" },
 
-            { header: "B. THIẾT BỊ ĐO ĐẾM & TÍCH HỢP" },
-            { id: "gw", name: "Modbus Gateway", spec: "RS485 to IP, Industrial Grade", unit: "Bộ", qty: 5, note: "Max 32 dev/loop" },
-            { id: "pm", name: "Đồng hồ điện 3 pha", spec: "Modbus RTU, Class 1.0", unit: "Bộ", qty: 5, note: "" },
-            { id: "wm", name: "Đồng hồ nước (Smart Meter)", spec: "Đa năng (Nóng/Lạnh), Modbus/Pulse", unit: "Bộ", qty: 5, note: "" },
+            { header: "B", title: "THIẾT BỊ ĐO ĐẾM & TÍCH HỢP" },
+            { id: "gw", name: "Modbus Gateway", spec: "RS485 to IP, 2 Port, Industrial", unit: "Bộ", qty: 5, note: "Max 32 dev/port" },
+            { id: "pm", name: "Đồng hồ điện 3 pha", spec: "Modbus RTU, Class 0.5S", unit: "Bộ", qty: 5, note: "Power Monitoring" },
+            { id: "wm", name: "Đồng hồ nước (Smart)", spec: "Giao tiếp Modbus/Pulse, IP68", unit: "Bộ", qty: 5, note: "" },
 
-            { header: "C. THIẾT BỊ TRƯỜNG (FIELD DEVICES)" },
-            { id: "temp", name: "Cảm biến nhiệt độ phòng", spec: "NTC/Pt1000, Wall mount", unit: "Bộ", qty: 10, note: "" },
+            { header: "C", title: "THIẾT BỊ TRƯỜNG (FIELD DEVICES)" },
+            { id: "temp", name: "Cảm biến nhiệt độ phòng", spec: "NTC/Pt1000, Wall mount, LCD", unit: "Bộ", qty: 10, note: "" },
             { id: "humid", name: "Cảm biến độ ẩm + nhiệt độ", spec: "Duct/Wall mount, 0-10V/4-20mA", unit: "Bộ", qty: 10, note: "" },
-            { id: "co2", name: "Cảm biến CO2", spec: "Duct/Wall mount, 0-2000ppm", unit: "Bộ", qty: 10, note: "" },
-            { id: "valve", name: "Van nước lạnh & Actuator", spec: "DN... + Actuator 0-10V", unit: "Bộ", qty: 10, note: "" },
-            { id: "dps", name: "Cảm biến chênh áp gió (DPS)", spec: "0-500Pa, Analog Output", unit: "Bộ", qty: 10, note: "" },
-            { id: "dps_sw", name: "Công tắc chênh áp (DP Switch)", spec: "Air/Water Differential Switch", unit: "Bộ", qty: 10, note: "" },
-            { id: "oil", name: "Cảm biến mức dầu", spec: "Siêu âm, 4-20mA, IP67", unit: "Bộ", qty: 10, note: "" },
-            { id: "water_lvl", name: "Cảm biến mức nước", spec: "Thả chìm (Hydrostatic), 0-5m", unit: "Bộ", qty: 10, note: "" },
-            { id: "press", name: "Cảm biến áp suất nước", spec: "0-10/16 Bar, 4-20mA", unit: "Bộ", qty: 10, note: "" },
-            { id: "co", name: "Cảm biến khí CO", spec: "0-1000ppm, Output Modbus/Analog", unit: "Bộ", qty: 10, note: "" },
+            { id: "co2", name: "Cảm biến CO2", spec: "NDIR Tech, 0-2000ppm, Duct Mount", unit: "Bộ", qty: 10, note: "Air Quality" },
+            { id: "valve", name: "Van nước lạnh & Actuator", spec: "PICV DN25 + Actuator 0-10V", unit: "Bộ", qty: 10, note: "FCU/AHU" },
+            { id: "dps", name: "Cảm biến chênh áp gió", spec: "0-500Pa, Analog Output 0-10V", unit: "Bộ", qty: 10, note: "Filter Status" },
+            { id: "dps_sw", name: "Công tắc chênh áp gió", spec: "Adjustable 20-200Pa, SPDT", unit: "Bộ", qty: 10, note: "Fan Status" },
+            { id: "co", name: "Cảm biến khí CO", spec: "Electrochemical, 0-300ppm", unit: "Bộ", qty: 10, note: "Car Park" },
 
-            { header: "D. TỦ ĐIỀU KHIỂN DDC (CẤU HÌNH IO TÙY CHỈNH)" },
-            { id: "ddc1", type: "ddc", name: "Tủ DDC Loại 1 (Small)", spec: "Custom Configuration", unit: "Tủ", qty: 5, di: 10, do: 10, ai: 10, ao: 10, hli: 10, note: "Trục tầng" },
-            { id: "ddc2", type: "ddc", name: "Tủ DDC Loại 2 (Medium)", spec: "Custom Configuration", unit: "Tủ", qty: 5, di: 10, do: 10, ai: 10, ao: 10, hli: 10, note: "AHU/Pump" },
-            { id: "ddc3", type: "ddc", name: "Tủ DDC Loại 3 (Large)", spec: "Custom Configuration", unit: "Tủ", qty: 5, di: 10, do: 10, ai: 10, ao: 10, hli: 10, note: "Chiller Plant" },
+            { header: "D", title: "TỦ ĐIỀU KHIỂN DDC (CẤU HÌNH IO)" },
+            { id: "ddc1", type: "ddc", name: "Tủ DDC Loại 1 (Small)", spec: "Vỏ tủ sơn tĩnh điện\nController chuẩn BACnet/IP", unit: "Tủ", qty: 5, di: 8, do: 4, ai: 4, ao: 2, hli: 0, note: "Trục tầng" },
+            { id: "ddc2", type: "ddc", name: "Tủ DDC Loại 2 (Medium)", spec: "Vỏ tủ sơn tĩnh điện\nController chuẩn BACnet/IP", unit: "Tủ", qty: 5, di: 16, do: 8, ai: 8, ao: 4, hli: 1, note: "AHU/Pump" },
+            { id: "ddc3", type: "ddc", name: "Tủ DDC Loại 3 (Large)", spec: "Vỏ tủ Form 2B\nController chuẩn BACnet/IP", unit: "Tủ", qty: 5, di: 24, do: 12, ai: 16, ao: 8, hli: 2, note: "Chiller Plant" },
 
-            { header: "E. CÁP TÍN HIỆU & VẬT TƯ (TỰ ĐỘNG TÍNH)" },
-            { id: "cab_stp", type: "cable", name: "Cáp STP - AWG18", spec: "1x2x18AWG Shielded Twisted Pair", unit: "Mét", qty: 0, note: "Modbus/Analog (Auto)" },
-            { id: "cab_pwr", type: "cable", name: "Dây đơn 1x1.5mm2", spec: "Cu/PVC/PVC (Control/Power)", unit: "Mét", qty: 0, note: "Nguồn/Control (Auto)" },
-            { id: "cab_cat6", type: "cable", name: "Cáp mạng UTP CAT6", spec: "Chuẩn CAT6, UTP", unit: "Mét", qty: 0, note: "LAN Network (Auto)" },
-            { id: "acc", type: "acc", name: "Vật tư phụ (Ống, Máng, Cos)", spec: "Chiếm 15% tổng khối lượng dây", unit: "Gói", qty: 0, note: "Consumables (Auto)" }
+            { header: "E", title: "CÁP TÍN HIỆU (AUTO-SIZING)" },
+            { id: "cab_stp", type: "cable", name: "Cáp STP - AWG18", spec: "1x2x18AWG Shielded Twisted Pair", unit: "Mét", qty: 0, note: "Modbus/AI" },
+            { id: "cab_pwr", type: "cable", name: "Dây đơn 1x1.5mm2", spec: "Cu/PVC/PVC, Standard IEC", unit: "Mét", qty: 0, note: "Power/DI/DO" },
+            { id: "cab_cat6", type: "cable", name: "Cáp mạng UTP CAT6", spec: "CAT6 UTP 4-Pair 23AWG", unit: "Mét", qty: 0, note: "Network" },
+            { id: "acc", type: "acc", name: "Vật tư phụ", spec: "Ống, máng, đầu cos, lạt thít...", unit: "Gói", qty: 0, note: "15% Cable" }
         ];
 
-        // Format Currency: No Decimals (maximumFractionDigits: 0)
-        const formatCurrency = (num) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(num);
+        const fmt = (num) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(num);
 
         function renderTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            let sttCounter = 1;
+            let stt = 1;
 
             bmsData.forEach((item, index) => {
                 if (item.header) {
-                    const row = `<tr class="bg-brand-50/50 text-brand-800 font-bold border-b border-brand-100"><td colspan="7" class="px-3 py-3 text-xs uppercase tracking-wider pl-4">${item.header}</td></tr>`;
-                    tbody.innerHTML += row;
+                    const icon = sectionIcons[item.header] || 'fa-box';
+                    tbody.innerHTML += `
+                        <tr class="bg-slate-50 border-t border-slate-200 no-hover">
+                            <td colspan="7" class="py-2 px-4">
+                                <div class="flex items-center gap-2 text-nhc-blue font-bold">
+                                    <div class="w-6 h-6 rounded bg-nhc-blue text-white flex items-center justify-center text-xs">${item.header}</div>
+                                    <span class="text-xs uppercase tracking-wider">${item.title}</span>
+                                    <i class="fa-solid ${icon} ml-auto text-slate-300 text-sm"></i>
+                                </div>
+                            </td>
+                        </tr>`;
                 } else {
-                    const row = document.createElement('tr');
-                    row.className = "hover:bg-brand-50/30 transition border-b border-gray-50 group";
                     if (!item.price) item.price = 0;
-
+                    
                     let configHtml = '';
                     if (item.type === 'ddc') {
-                         configHtml = `
-                            <div class="mt-2 grid grid-cols-5 gap-2 no-print max-w-md">
-                                <div class="flex flex-col"><span class="text-[9px] text-gray-400 font-bold uppercase text-center mb-0.5">DI</span><input type="number" value="${item.di}" oninput="updateDDCIO(${index}, 'di', this.value)" class="w-full text-center border border-gray-200 rounded text-xs p-1 bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"></div>
-                                <div class="flex flex-col"><span class="text-[9px] text-gray-400 font-bold uppercase text-center mb-0.5">DO</span><input type="number" value="${item.do}" oninput="updateDDCIO(${index}, 'do', this.value)" class="w-full text-center border border-gray-200 rounded text-xs p-1 bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"></div>
-                                <div class="flex flex-col"><span class="text-[9px] text-gray-400 font-bold uppercase text-center mb-0.5">AI</span><input type="number" value="${item.ai}" oninput="updateDDCIO(${index}, 'ai', this.value)" class="w-full text-center border border-gray-200 rounded text-xs p-1 bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"></div>
-                                <div class="flex flex-col"><span class="text-[9px] text-gray-400 font-bold uppercase text-center mb-0.5">AO</span><input type="number" value="${item.ao}" oninput="updateDDCIO(${index}, 'ao', this.value)" class="w-full text-center border border-gray-200 rounded text-xs p-1 bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"></div>
-                                <div class="flex flex-col"><span class="text-[9px] text-gray-400 font-bold uppercase text-center mb-0.5">HLI</span><input type="number" value="${item.hli}" oninput="updateDDCIO(${index}, 'hli', this.value)" class="w-full text-center border border-gray-200 rounded text-xs p-1 bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"></div>
+                        configHtml = `
+                            <div class="mt-1 flex gap-1 no-print overflow-x-auto">
+                                ${['di','do','ai','ao','hli'].map(t => `
+                                <div class="flex items-center border rounded px-1 bg-white">
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase mr-1">${t}</span>
+                                    <input type="number" value="${item[t]}" oninput="updateDDCIO(${index}, '${t}', this.value)" class="w-5 text-center text-[10px] font-bold focus:outline-none">
+                                </div>`).join('')}
                             </div>
-                            <div class="hidden print:block text-xs text-gray-500 mt-1 italic">
-                                * Cấu hình: ${item.di} DI / ${item.do} DO / ${item.ai} AI / ${item.ao} AO / ${item.hli} HLI
-                            </div>
-                         `;
+                            <div class="hidden print:block text-[10px] text-slate-500 italic">[${item.di}DI/${item.do}DO/${item.ai}AI/${item.ao}AO/${item.hli}HLI]</div>`;
                     }
 
-                    const qtyDisplayId = `qty-display-${index}`;
-
-                    let qtyInput = `
-                        <div class="flex items-center justify-center gap-1 no-print">
-                            <button onclick="adjustQty(${index}, -1)" class="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold flex items-center justify-center text-xs transition shadow-sm">-</button>
-                            <input type="number" value="${item.qty}" class="w-12 text-center border-b border-gray-200 focus:outline-none focus:border-brand-500 font-bold text-gray-700 bg-transparent" oninput="updateRow(${index}, this.value, 'qty')">
-                            <button onclick="adjustQty(${index}, 1)" class="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold flex items-center justify-center text-xs transition shadow-sm">+</button>
-                        </div>
-                        <span class="hidden print:block text-center font-bold text-gray-800">${Math.round(item.qty)}</span>
-                    `;
-
+                    let qtyHtml = '';
                     if (item.type === 'cable' || item.type === 'acc') {
-                        qtyInput = `<div id="${qtyDisplayId}" class="text-center font-bold text-brand-600 bg-brand-50/50 py-1 px-2 rounded-md w-full border border-brand-100 shadow-sm">${Math.round(item.qty)}</div>`;
+                        // FIXED: ID matching the updateCableItem logic
+                        qtyHtml = `<div id="qty-d-${index}" class="text-center font-bold text-nhc-teal text-xs select-none">${Math.round(item.qty)}</div>`;
+                    } else {
+                        qtyHtml = `
+                            <div class="flex items-center justify-center gap-1 no-print">
+                                <button onclick="adjQty(${index}, -1)" class="text-slate-400 hover:text-red-500 font-bold px-1">-</button>
+                                <input id="qty-i-${index}" type="number" value="${item.qty}" class="w-8 text-center border-b border-transparent hover:border-blue-400 focus:border-blue-500 font-bold text-xs bg-transparent p-0" oninput="updRow(${index}, this.value, 'qty')">
+                                <button onclick="adjQty(${index}, 1)" class="text-slate-400 hover:text-green-500 font-bold px-1">+</button>
+                            </div>
+                            <span class="hidden print:block text-center font-bold text-xs">${Math.round(item.qty)}</span>`;
                     }
 
-                    row.innerHTML = `
-                        <td class="px-3 py-3 text-center text-gray-400 text-xs align-top pt-4 font-medium">${sttCounter++}</td>
-                        <td class="px-4 py-3">
-                            <input type="text" value="${item.name}" class="font-bold text-gray-800 w-full bg-transparent focus:outline-none focus:border-b border-brand-500 print-hidden-border transition" onchange="updateMeta(${index}, 'name', this.value)">
-                            <div class="text-xs text-gray-500 mt-1">${item.spec}</div>
-                            ${configHtml}
-                        </td>
-                        <td class="px-2 py-3 text-center text-sm align-top pt-4 text-gray-600">${item.unit}</td>
-                        <td class="px-2 py-3 align-top pt-3">
-                            ${qtyInput}
-                        </td>
-                        <td class="px-4 py-3 text-right align-top pt-3">
-                            <input type="number" placeholder="0" class="w-full text-right border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 focus:outline-none bg-yellow-50/50 font-medium text-sm print-hidden-border transition text-gray-800" id="price-${index}" oninput="updateRow(${index}, this.value, 'price')" value="${item.price === 0 ? '' : item.price}">
-                        </td>
-                        <td class="px-4 py-3 text-right font-bold text-gray-900 text-sm align-top pt-4" id="total-${index}">0</td>
-                        <td class="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell align-top pt-4 italic">
-                            <input type="text" value="${item.note}" class="w-full bg-transparent focus:outline-none focus:border-b border-gray-300 print-hidden-border" onchange="updateMeta(${index}, 'note', this.value)">
-                        </td>
-                    `;
-                    tbody.appendChild(row);
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-blue-50/50 border-b border-slate-100 last:border-0 group">
+                            <td class="px-3 py-3 text-center text-slate-400 text-xs border-r border-slate-50">${stt++}</td>
+                            <td class="px-4 py-3 border-r border-slate-50">
+                                <input type="text" value="${item.name}" class="font-bold text-slate-700 w-full bg-transparent focus:text-nhc-blue text-xs mb-0.5" onchange="updMeta(${index}, 'name', this.value)">
+                                <textarea rows="1" class="text-[11px] text-slate-500 w-full bg-transparent resize-y focus:bg-white rounded" onchange="updMeta(${index}, 'spec', this.value)">${item.spec}</textarea>
+                                ${configHtml}
+                            </td>
+                            <td class="px-2 py-3 text-center text-xs text-slate-500 border-r border-slate-50">${item.unit}</td>
+                            <td class="px-2 py-3 border-r border-slate-50">${qtyHtml}</td>
+                            <td class="px-3 py-3 text-right border-r border-slate-50">
+                                <input type="number" placeholder="0" class="w-full text-right bg-transparent focus:bg-white border-transparent hover:border-slate-200 focus:border-nhc-blue border rounded text-xs font-medium" value="${item.price || ''}" oninput="updRow(${index}, this.value, 'price')">
+                            </td>
+                            <td class="px-3 py-3 text-right font-bold text-slate-800 text-xs border-r border-slate-50" id="total-${index}">0</td>
+                            <td class="px-3 py-3 hidden xl:table-cell">
+                                <textarea rows="1" class="w-full bg-transparent text-xs text-right text-slate-400 focus:text-slate-600 resize-none" onchange="updMeta(${index}, 'note', this.value)">${item.note}</textarea>
+                            </td>
+                        </tr>`;
                 }
             });
             document.getElementById('dateInput').valueAsDate = new Date();
-            recalcCables();
-            updateSoftwareSpec();
+            recalcCables(); // FIXED: Initial calculation call
         }
 
-        window.updateDDCIO = function(index, type, value) {
-            bmsData[index][type] = parseFloat(value) || 0;
-            recalcCables();
-        }
-
-        window.adjustQty = function(index, delta) {
-            let newQty = (bmsData[index].qty || 0) + delta;
-            if (newQty < 0) newQty = 0;
-            updateRow(index, newQty, 'qty');
-        }
-
-        window.updateRow = function(index, value, type) {
-            const numericValue = parseFloat(value) || 0;
-            if (type === 'qty') bmsData[index].qty = numericValue;
-            if (type === 'price') bmsData[index].price = numericValue;
-
-            if (type === 'qty') {
-                 recalcCables();
-            } else {
-                 calculateTotal();
-            }
-        }
-
-        window.recalcCables = function() {
-            const metric = parseFloat(document.getElementById('cableMetric').value) || 30;
-
-            let totalAI = 0, totalAO = 0;
-            let totalGateways = 0;
-            let totalDDCPanels = 0;
-            let totalSensors = 0;
-
-            bmsData.forEach(item => {
-                if (item.type === 'ddc') {
-                    totalAI += ((item.qty || 0) * (item.ai || 0));
-                    totalAO += ((item.qty || 0) * (item.ao || 0));
-                    totalDDCPanels += (item.qty || 0);
-                }
-                if (item.id === 'gw') totalGateways += (item.qty || 0);
-                if (['temp', 'humid', 'co2', 'valve', 'dps', 'dps_sw', 'oil', 'water_lvl', 'press', 'co'].includes(item.id)) {
-                    totalSensors += (item.qty || 0);
-                }
-            });
-
-            const len_stp = ((totalAI + totalAO) * metric) + (totalGateways * 17 * metric);
-            const len_pwr = ((totalAI + totalAO) * metric * 2) + (totalSensors * metric);
-            const len_cat6 = (totalDDCPanels + 1) * metric;
-            const len_total = len_stp + len_pwr + len_cat6;
-            const qty_acc = len_total * 0.15; 
-
-            updateCableItem('cab_stp', len_stp);
-            updateCableItem('cab_pwr', len_pwr);
-            updateCableItem('cab_cat6', len_cat6);
-            updateCableItem('acc', qty_acc);
-
-            calculateTotal();
-        }
-
-        function updateCableItem(id, newVal) {
-            const index = bmsData.findIndex(i => i.id === id);
-            if (index > -1) {
-                bmsData[index].qty = Math.round(newVal);
-                const el = document.getElementById(`qty-display-${index}`);
-                if (el) el.innerText = Math.round(newVal);
-            }
-        }
-
-        window.calculateTotal = function() {
-            let equipmentTotal = 0;
-
-            bmsData.forEach((item, index) => {
-                if (!item.header) {
-                    const lineTotal = (item.qty || 0) * (item.price || 0);
-                    equipmentTotal += lineTotal;
-                    
-                    const totalEl = document.getElementById(`total-${index}`);
-                    if(totalEl) totalEl.innerText = formatCurrency(lineTotal);
-                }
-            });
-
-            const installRate = parseFloat(document.getElementById('installRate').value) / 100 || 0;
-            const engRate = parseFloat(document.getElementById('engRate').value) / 100 || 0;
-            const contingencyRate = parseFloat(document.getElementById('contigencyRate').value) / 100 || 0;
-
-            const installCost = equipmentTotal * installRate;
-            const engCost = equipmentTotal * engRate;
-            const subTotal = equipmentTotal + installCost + engCost;
-            const contingencyCost = subTotal * contingencyRate;
-            const grandTotal = subTotal + contingencyCost;
-
-            document.getElementById('sumEquipment').innerText = formatCurrency(equipmentTotal);
-            document.getElementById('sumInstall').innerText = formatCurrency(installCost);
-            document.getElementById('sumEng').innerText = formatCurrency(engCost);
-            document.getElementById('sumContingency').innerText = formatCurrency(contingencyCost);
-            document.getElementById('grandTotal').innerText = formatCurrency(grandTotal) + ' VNĐ';
-        }
-
-        window.updateMeta = function(index, field, value) { bmsData[index][field] = value; }
+        // Logic - RENAMED to match HTML calls (recalcCables)
+        function updateDDCIO(i, t, v) { bmsData[i][t] = parseFloat(v) || 0; recalcCables(); }
         
-        window.updateSoftwareSpec = function() {
-            const select = document.getElementById('softwareSelect');
-            const selectedText = select.options[select.selectedIndex].text;
-            const swIndex = bmsData.findIndex(item => item.id === 'sw');
-            if (swIndex !== -1) {
-                bmsData[swIndex].spec = selectedText;
+        function adjQty(i, d) { 
+            let n = (bmsData[i].qty || 0) + d; 
+            if(n<0) n=0; 
+            bmsData[i].qty = n; 
+            document.getElementById(`qty-i-${i}`).value = n; 
+            recalcCables(); 
+        }
+
+        function updRow(i, v, t) { 
+            let val = parseFloat(v) || 0; 
+            if(t==='qty') { 
+                bmsData[i].qty = val; 
+                recalcCables(); 
+            } else { 
+                bmsData[i].price = val; 
+                calcTot(); 
             }
         }
 
-        window.resetPrices = function() {
-            if(confirm("Xóa toàn bộ Đơn giá về 0?")) {
-                bmsData.forEach(item => { if (!item.header) item.price = 0; });
-                renderTable(); 
+        function updMeta(i, f, v) { bmsData[i][f] = v; }
+        
+        // FIXED: Renamed function back to 'recalcCables' to match HTML onclick attribute
+        function recalcCables() {
+            const m = parseFloat(document.getElementById('cableMetric').value) || 30;
+            let ai=0, ao=0, gw=0, ddc=0, sen=0;
+            bmsData.forEach(d => {
+                if(d.type==='ddc') { ai+=d.qty*d.ai; ao+=d.qty*d.ao; ddc+=d.qty; }
+                if(d.id==='gw') gw+=d.qty;
+                if(['temp','humid','co2','valve','dps','dps_sw','oil','water_lvl','press','co'].includes(d.id)) sen+=d.qty;
+            });
+            
+            const cab = {
+                'cab_stp': (ai+ao)*m + gw*17*m,
+                'cab_pwr': (ai+ao)*m*2 + sen*m,
+                'cab_cat6': (ddc+1)*m,
+                'acc': 0 
+            };
+            cab.acc = (cab.cab_stp + cab.cab_pwr + cab.cab_cat6) * 0.15;
+
+            for(let k in cab) {
+                let idx = bmsData.findIndex(x => x.id === k);
+                if(idx>-1) {
+                    bmsData[idx].qty = Math.round(cab[k]);
+                    let el = document.getElementById(`qty-d-${idx}`);
+                    if(el) el.innerText = Math.round(cab[k]);
+                }
             }
+            calcTot();
+        }
+
+        function calcTot() {
+            let eq = 0;
+            bmsData.forEach((d, i) => {
+                if(!d.header) {
+                    let tot = (d.qty||0)*(d.price||0);
+                    eq += tot;
+                    let el = document.getElementById(`total-${i}`);
+                    if(el) el.innerText = fmt(tot);
+                }
+            });
+
+            const r1 = parseFloat(document.getElementById('installRate').value)/100 || 0;
+            const r2 = parseFloat(document.getElementById('engRate').value)/100 || 0;
+            const r3 = parseFloat(document.getElementById('contigencyRate').value)/100 || 0;
+            
+            const c1 = eq*r1, c2 = eq*r2, sum = eq+c1+c2, c3 = sum*r3;
+            
+            document.getElementById('sumEquipment').innerText = fmt(eq);
+            document.getElementById('sumInstall').innerText = fmt(c1);
+            document.getElementById('sumEng').innerText = fmt(c2);
+            document.getElementById('sumContingency').innerText = fmt(c3);
+            document.getElementById('grandTotal').innerText = fmt(sum+c3);
+        }
+
+        function updateSoftwareSpec() {
+            const txt = document.getElementById('softwareSelect').value;
+            const idx = bmsData.findIndex(x => x.id === 'sw');
+            if(idx>-1) { bmsData[idx].spec = txt; renderTable(); }
+        }
+
+        function resetPrices() {
+            if(confirm("Reset đơn giá về 0?")) {
+                bmsData.forEach(d => { if(!d.header) d.price=0; });
+                renderTable();
+            }
+        }
+
+        function exportToExcel() {
+            const pName = document.getElementById('projName').value || 'Project';
+            const data = [
+                ["NAM HOÀNG CONTROLS - BOQ ESTIMATE"],
+                ["Dự án:", pName, "Ngày:", document.getElementById('dateInput').value],
+                [""],
+                ["STT", "Mô tả", "Thông số", "ĐVT", "SL", "Đơn giá", "Thành tiền", "Ghi chú"]
+            ];
+            let k=1;
+            bmsData.forEach(d => {
+                if(d.header) data.push([d.header + ". " + d.title]);
+                else data.push([k++, d.name, d.spec, d.unit, d.qty, d.price, (d.qty*d.price), d.note]);
+            });
+            data.push(["","","","","","",""]);
+            data.push(["","TỔNG CỘNG","","","",document.getElementById('grandTotal').innerText]);
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:5}, {wch:40}, {wch:40}, {wch:10}, {wch:10}, {wch:15}, {wch:20}, {wch:20}];
+            XLSX.utils.book_append_sheet(wb, ws, "BOQ");
+            XLSX.writeFile(wb, `BOQ_${pName}.xlsx`);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('printDateDisplay').innerText = new Date().toLocaleDateString('vi-VN');
             renderTable();
         });
-
     </script>
 </body>
 </html>
