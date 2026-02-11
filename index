@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMS Master Estimator v2.2 - Nam Hoàng Controls</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nhc: {
+                            navy: '#0f172a',    // Deep Navy (Brand Base)
+                            blue: '#1e40af',    // Brand Blue
+                            gold: '#f59e0b',    // Gold (Action/Highlight)
+                            teal: '#14b8a6',    // Teal (Secondary)
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'slim': '0 2px 10px rgba(0,0,0,0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+
+        /* Compact Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        
+        /* Input Reset */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        /* Custom Header Input */
+        .header-project-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s;
+        }
+        .header-project-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #f59e0b; /* Gold border on focus */
+            outline: none;
+        }
+
+        @media print {
+            body { background: white !important; -webkit-print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .main-col { width: 100% !important; max-width: 100% !important; }
+            .sidebar-col { display: none !important; }
+            input, textarea { border: none !important; resize: none; }
+            .print-bg-header { background-color: #f1f5f9 !important; border-bottom: 2px solid #0f172a; }
+        }
+    </style>
+</head>
+<body class="text-slate-700 flex flex-col min-h-screen">
+
+    <!-- v2.2 COMPACT HEADER (Sticky) -->
+    <header class="bg-nhc-navy text-white shadow-slim sticky top-0 z-50 no-print border-b-2 border-nhc-gold h-[70px]">
+        <div class="max-w-[1600px] mx-auto px-4 h-full flex items-center justify-between gap-4">
+            
+            <!-- LEFT: BRAND IDENTITY -->
+            <div class="flex items-center gap-3 w-1/4">
+                <div class="w-10 h-10 bg-white rounded flex items-center justify-center shrink-0 border border-slate-200">
+                    <img src="logo.png" class="w-8 h-8 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                    <i class="fa-solid fa-building-shield text-xl text-nhc-navy hidden"></i>
+                </div>
+                <div class="leading-tight">
+                    <h1 class="font-bold text-base tracking-wide uppercase">Nam Hoàng Controls</h1>
+                    <div class="text-[10px] text-nhc-teal font-medium tracking-wider">Professional Solutions</div>
+                </div>
+            </div>
+
+            <!-- CENTER: PROJECT INFO & TOOL NAME -->
+            <div class="flex-1 flex flex-col items-center justify-center h-full max-w-2xl">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">BMS Master Estimator</span>
+                    <span class="text-[9px] bg-slate-700 text-slate-300 px-1.5 rounded">v2.2</span>
+                </div>
+                <div class="relative w-full">
+                    <i class="fa-solid fa-pen absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                    <input type="text" id="headerProjName" placeholder="NHẬP TÊN DỰ ÁN..." 
+                           class="header-project-input w-full rounded py-1 pl-8 pr-3 text-sm font-bold text-center text-white placeholder-slate-500 uppercase tracking-wide"
+                           oninput="document.getElementById('projName').value = this.value">
+                </div>
+            </div>
+
+            <!-- RIGHT: ACTIONS -->
+            <div class="flex items-center justify-end gap-3 w-1/4">
+                <button onclick="exportToExcel()" class="bg-nhc-gold hover:bg-yellow-400 text-nhc-navy text-xs font-bold px-4 py-2 rounded shadow transition flex items-center gap-2 group">
+                    <i class="fa-solid fa-file-excel group-hover:scale-110 transition-transform"></i>
+                    <span>Export Report</span>
+                </button>
+                <div class="h-6 w-px bg-slate-700 mx-1"></div>
+                <button onclick="window.print()" class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-white transition" title="Print">
+                    <i class="fa-solid fa-print"></i>
+                </button>
+                <button onclick="resetPrices()" class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-red-400 transition" title="Reset">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- PRINT HEADER (Visible only on Print/PDF) -->
+    <div class="hidden print:block mb-8 pt-4 px-8 print-bg-header pb-4">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" class="h-16 w-auto object-contain">
+                <div>
+                    <h1 class="text-2xl font-black text-nhc-navy uppercase">Nam Hoàng Controls</h1>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">BMS & Data Center Solutions</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <h2 class="text-3xl font-black text-slate-800 uppercase">Bảng Dự Toán</h2>
+                <p class="text-sm font-medium text-nhc-blue" id="printDateDisplay"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT GRID -->
+    <div class="max-w-[1600px] mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT: BOQ TABLE (9 Cols) -->
+        <div class="lg:col-span-9 main-col space-y-6">
+            
+            <!-- Hidden inputs for logic -->
+            <input type="hidden" id="projName">
+            <input type="date" id="dateInput" class="hidden">
+
+            <!-- TABLE CONTAINER -->
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border-collapse">
+                        <thead class="bg-slate-800 text-white uppercase font-bold text-[10px] tracking-wide">
+                            <tr>
+                                <th class="px-3 py-3 text-center w-10 border-r border-slate-700">STT</th>
+                                <th class="px-4 py-3 min-w-[350px] border-r border-slate-700">Mô Tả & Thông Số Kỹ Thuật</th>
+                                <th class="px-2 py-3 text-center w-14 border-r border-slate-700">ĐVT</th>
+                                <th class="px-2 py-3 text-center w-24 border-r border-slate-700">Số Lượng</th>
+                                <th class="px-3 py-3 text-right w-32 border-r border-slate-700">Đơn Giá</th>
+                                <th class="px-3 py-3 text-right w-32 border-r border-slate-700">Thành Tiền</th>
+                                <th class="px-3 py-3 w-40 hidden xl:table-cell">Ghi Chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- JS Generated Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Signatures (Print Only) -->
+            <div class="hidden print:flex justify-between mt-10 px-10">
+                <div class="text-center w-40">
+                    <p class="font-bold text-xs uppercase mb-16">Người Lập</p>
+                    <div class="border-t border-slate-400 pt-1 text-xs italic">Ký & Ghi rõ họ tên</div>
+                </div>
+                <div class="text-center w-40">
+                    <p class="font-bold text-xs uppercase mb-16">Phê Duyệt</p>
+                    <div class="border-t border-slate-400 pt-1 text-xs italic">Giám Đốc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: SIDEBAR (3 Cols) -->
+        <div class="lg:col-span-3 sidebar-col space-y-4">
+            <div class="sticky top-[85px] space-y-4">
+                
+                <!-- SUMMARY CARD -->
+                <div class="bg-white rounded-lg shadow-md border-t-4 border-nhc-gold p-5">
+                    <h3 class="font-bold text-nhc-navy text-sm uppercase mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice-dollar text-nhc-gold"></i> Tổng Hợp Chi Phí
+                    </h3>
+                    
+                    <div class="space-y-3 text-xs">
+                        <div class="flex justify-between text-slate-500">
+                            <span>Vật tư (A-E):</span>
+                            <span class="font-bold text-slate-800" id="sumEquipment">0</span>
+                        </div>
+                        <div class="border-t border-slate-100 my-2"></div>
+                        
+                        <!-- Mini Inputs for Rates -->
+                        <div class="grid grid-cols-1 gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Lắp đặt:</span>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="installRate" value="15" oninput="calculateTotal()" class="w-8 text-right font-bold text-nhc-blue bg-slate-50 border-b border-slate-300 focus:outline-none p-0 text-xs">
+                                    <span class="text-[10px] text-slate-400">%</span>
+                                </div>
+                                <span class="font-medium ml-auto" id="sumInstall">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Kỹ thuật:</span>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="engRate" value="15" oninput="calculateTotal()" class="w-8 text-right font-bold text-nhc-blue bg-slate-50 border-b border-slate-300 focus:outline-none p-0 text-xs">
+                                    <span class="text-[10px] text-slate-400">%</span>
+                                </div>
+                                <span class="font-medium ml-auto" id="sumEng">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Dự phòng:</span>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="contigencyRate" value="5" oninput="calculateTotal()" class="w-8 text-right font-bold text-nhc-blue bg-slate-50 border-b border-slate-300 focus:outline-none p-0 text-xs">
+                                    <span class="text-[10px] text-slate-400">%</span>
+                                </div>
+                                <span class="font-medium ml-auto" id="sumContingency">0</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-dashed border-slate-300 mt-2 bg-slate-50 -mx-5 px-5 pb-1">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Tổng Cộng (VNĐ)</div>
+                            <div class="text-2xl font-black text-nhc-navy tracking-tight" id="grandTotal">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONFIG CARD -->
+                <div class="bg-slate-800 rounded-lg p-4 text-white shadow-md">
+                    <h3 class="font-bold text-nhc-teal text-[10px] uppercase mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-gear"></i> Cấu hình nhanh
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Dây / Điểm (m)</label>
+                            <input type="number" id="cableMetric" value="30" oninput="recalcCables()" class="w-full bg-slate-700 border-none rounded px-2 py-1 text-xs font-bold text-white focus:ring-1 focus:ring-nhc-teal">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">License BMS</label>
+                            <select id="softwareSelect" onchange="updateSoftwareSpec()" class="w-full bg-slate-700 border-none rounded px-2 py-1 text-[10px] font-bold text-white focus:ring-1 focus:ring-nhc-teal cursor-pointer">
+                                <option>500 Points - Basic</option>
+                                <option>2,500 Points - Standard</option>
+                                <option selected>10,000 Points - Enterprise</option>
+                                <option>Unlimited Points</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // Icons mapping
+        const sectionIcons = { "A": "fa-server", "B": "fa-network-wired", "C": "fa-temperature-high", "D": "fa-microchip", "E": "fa-bezier-curve" };
+
+        let bmsData = [
+            { header: "A", title: "THIẾT BỊ PHÒNG ĐIỀU KHIỂN TRUNG TÂM" },
+            { id: "srv", name: "Máy chủ BMS (Server)", spec: "Intel Atom E3950, 8GB RAM, 64GB SSD, Win Server 2022\nKèm License Windows bản quyền", unit: "Bộ", qty: 1, note: "Redundant Ready" },
+            { id: "sw", name: "Phần mềm BMS (License)", spec: "Block 10,000 Points - Enterprise Edition\nWeb-based, Mobile App support", unit: "Gói", qty: 1, note: "Update 12 tháng" },
+            { id: "core_switch", name: "Switch Mạng Core (L3)", spec: "24 Port Gigabit, 4 SFP+, Layer 3, Managed", unit: "Bộ", qty: 1, note: "Backbone" },
+            { id: "ws", name: "Máy tính trạm (Workstation)", spec: "Core i7 Gen12, 16GB RAM, 512GB SSD", unit: "Bộ", qty: 1, note: "Operator" },
+            { id: "monitor", name: "Màn hình hiển thị", spec: "24 inch, Full HD, IPS", unit: "Bộ", qty: 2, note: "Dual Monitor" },
+            { id: "ups", name: "UPS Online 3kVA", spec: "True Online, Sinewave\nBackup: 15 mins", unit: "Bộ", qty: 1, note: "Rackmount" },
+            { id: "printer", name: "Máy in Laser màu", spec: "In mạng LAN, khổ A4", unit: "Bộ", qty: 1, note: "" },
+
+            { header: "B", title: "THIẾT BỊ ĐO ĐẾM & TÍCH HỢP" },
+            { id: "gw", name: "Modbus Gateway", spec: "RS485 to IP, 2 Port, Industrial", unit: "Bộ", qty: 5, note: "Max 32 dev/port" },
+            { id: "pm", name: "Đồng hồ điện 3 pha", spec: "Modbus RTU, Class 0.5S", unit: "Bộ", qty: 5, note: "Power Monitoring" },
+            { id: "wm", name: "Đồng hồ nước (Smart)", spec: "Giao tiếp Modbus/Pulse, IP68", unit: "Bộ", qty: 5, note: "" },
+
+            { header: "C", title: "THIẾT BỊ TRƯỜNG (FIELD DEVICES)" },
+            { id: "temp", name: "Cảm biến nhiệt độ phòng", spec: "NTC/Pt1000, Wall mount, LCD", unit: "Bộ", qty: 10, note: "" },
+            { id: "humid", name: "Cảm biến độ ẩm + nhiệt độ", spec: "Duct/Wall mount, 0-10V/4-20mA", unit: "Bộ", qty: 10, note: "" },
+            { id: "co2", name: "Cảm biến CO2", spec: "NDIR Tech, 0-2000ppm", unit: "Bộ", qty: 10, note: "Air Quality" },
+            { id: "valve", name: "Van nước lạnh & Actuator", spec: "PICV DN25 + Actuator 0-10V", unit: "Bộ", qty: 10, note: "FCU/AHU" },
+            { id: "dps", name: "Cảm biến chênh áp gió", spec: "0-500Pa, Analog Output 0-10V", unit: "Bộ", qty: 10, note: "Filter Status" },
+            { id: "dps_sw", name: "Công tắc chênh áp gió", spec: "Adjustable 20-200Pa, SPDT", unit: "Bộ", qty: 10, note: "Fan Status" },
+            { id: "co", name: "Cảm biến khí CO", spec: "Electrochemical, 0-300ppm", unit: "Bộ", qty: 10, note: "Car Park" },
+
+            { header: "D", title: "TỦ ĐIỀU KHIỂN DDC (CẤU HÌNH IO)" },
+            { id: "ddc1", type: "ddc", name: "Tủ DDC Loại 1 (Small)", spec: "Vỏ tủ sơn tĩnh điện\nController chuẩn BACnet/IP", unit: "Tủ", qty: 5, di: 8, do: 4, ai: 4, ao: 2, hli: 0, note: "Trục tầng" },
+            { id: "ddc2", type: "ddc", name: "Tủ DDC Loại 2 (Medium)", spec: "Vỏ tủ sơn tĩnh điện\nController chuẩn BACnet/IP", unit: "Tủ", qty: 5, di: 16, do: 8, ai: 8, ao: 4, hli: 1, note: "AHU/Pump" },
+            { id: "ddc3", type: "ddc", name: "Tủ DDC Loại 3 (Large)", spec: "Vỏ tủ Form 2B\nController chuẩn BACnet/IP", unit: "Tủ", qty: 5, di: 24, do: 12, ai: 16, ao: 8, hli: 2, note: "Chiller Plant" },
+
+            { header: "E", title: "CÁP TÍN HIỆU (AUTO-SIZING)" },
+            { id: "cab_stp", type: "cable", name: "Cáp STP - AWG18", spec: "1x2x18AWG Shielded Twisted Pair", unit: "Mét", qty: 0, note: "Modbus/AI" },
+            { id: "cab_pwr", type: "cable", name: "Dây đơn 1x1.5mm2", spec: "Cu/PVC/PVC, Standard IEC", unit: "Mét", qty: 0, note: "Power/DI/DO" },
+            { id: "cab_cat6", type: "cable", name: "Cáp mạng UTP CAT6", spec: "CAT6 UTP 4-Pair 23AWG", unit: "Mét", qty: 0, note: "Network" },
+            { id: "acc", type: "acc", name: "Vật tư phụ", spec: "Ống, máng, đầu cos, lạt thít...", unit: "Gói", qty: 0, note: "15% Cable" }
+        ];
+
+        const fmt = (num) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(num);
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            let stt = 1;
+
+            bmsData.forEach((item, index) => {
+                if (item.header) {
+                    const icon = sectionIcons[item.header] || 'fa-box';
+                    tbody.innerHTML += `
+                        <tr class="bg-slate-50 border-t border-slate-200 no-hover">
+                            <td colspan="7" class="py-2 px-4">
+                                <div class="flex items-center gap-2 text-nhc-blue font-bold">
+                                    <div class="w-6 h-6 rounded bg-nhc-blue text-white flex items-center justify-center text-xs">${item.header}</div>
+                                    <span class="text-xs uppercase tracking-wider">${item.title}</span>
+                                    <i class="fa-solid ${icon} ml-auto text-slate-300 text-sm"></i>
+                                </div>
+                            </td>
+                        </tr>`;
+                } else {
+                    if (!item.price) item.price = 0;
+                    
+                    let configHtml = '';
+                    if (item.type === 'ddc') {
+                        configHtml = `
+                            <div class="mt-1 flex gap-1 no-print overflow-x-auto">
+                                ${['di','do','ai','ao','hli'].map(t => `
+                                <div class="flex items-center border rounded px-1 bg-white">
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase mr-1">${t}</span>
+                                    <input type="number" value="${item[t]}" oninput="updateDDCIO(${index}, '${t}', this.value)" class="w-5 text-center text-[10px] font-bold focus:outline-none">
+                                </div>`).join('')}
+                            </div>
+                            <div class="hidden print:block text-[10px] text-slate-500 italic">[${item.di}DI/${item.do}DO/${item.ai}AI/${item.ao}AO/${item.hli}HLI]</div>`;
+                    }
+
+                    let qtyHtml = '';
+                    if (item.type === 'cable' || item.type === 'acc') {
+                        qtyHtml = `<div id="qty-d-${index}" class="text-center font-bold text-nhc-teal text-xs">${Math.round(item.qty)}</div>`;
+                    } else {
+                        qtyHtml = `
+                            <div class="flex items-center justify-center gap-1 no-print">
+                                <button onclick="adjQty(${index}, -1)" class="text-slate-400 hover:text-red-500 font-bold px-1">-</button>
+                                <input id="qty-i-${index}" type="number" value="${item.qty}" class="w-8 text-center border-b border-transparent hover:border-blue-400 focus:border-blue-500 font-bold text-xs bg-transparent p-0" oninput="updRow(${index}, this.value, 'qty')">
+                                <button onclick="adjQty(${index}, 1)" class="text-slate-400 hover:text-green-500 font-bold px-1">+</button>
+                            </div>
+                            <span class="hidden print:block text-center font-bold text-xs">${Math.round(item.qty)}</span>`;
+                    }
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-blue-50/50 border-b border-slate-100 last:border-0 group">
+                            <td class="px-3 py-3 text-center text-slate-400 text-xs border-r border-slate-50">${stt++}</td>
+                            <td class="px-4 py-3 border-r border-slate-50">
+                                <input type="text" value="${item.name}" class="font-bold text-slate-700 w-full bg-transparent focus:text-nhc-blue text-xs mb-0.5" onchange="updMeta(${index}, 'name', this.value)">
+                                <textarea rows="1" class="text-[11px] text-slate-500 w-full bg-transparent resize-y focus:bg-white rounded" onchange="updMeta(${index}, 'spec', this.value)">${item.spec}</textarea>
+                                ${configHtml}
+                            </td>
+                            <td class="px-2 py-3 text-center text-xs text-slate-500 border-r border-slate-50">${item.unit}</td>
+                            <td class="px-2 py-3 border-r border-slate-50">${qtyHtml}</td>
+                            <td class="px-3 py-3 text-right border-r border-slate-50">
+                                <input type="number" placeholder="0" class="w-full text-right bg-transparent focus:bg-white border-transparent hover:border-slate-200 focus:border-nhc-blue border rounded text-xs font-medium" value="${item.price || ''}" oninput="updRow(${index}, this.value, 'price')">
+                            </td>
+                            <td class="px-3 py-3 text-right font-bold text-slate-800 text-xs border-r border-slate-50" id="total-${index}">0</td>
+                            <td class="px-3 py-3 hidden xl:table-cell">
+                                <textarea rows="1" class="w-full bg-transparent text-xs text-right text-slate-400 focus:text-slate-600 resize-none" onchange="updMeta(${index}, 'note', this.value)">${item.note}</textarea>
+                            </td>
+                        </tr>`;
+                }
+            });
+            document.getElementById('dateInput').valueAsDate = new Date();
+            recalc();
+        }
+
+        // Logic
+        function updateDDCIO(i, t, v) { bmsData[i][t] = parseFloat(v) || 0; recalc(); }
+        function adjQty(i, d) { let n = (bmsData[i].qty || 0) + d; if(n<0) n=0; bmsData[i].qty = n; document.getElementById(`qty-i-${i}`).value = n; recalc(); }
+        function updRow(i, v, t) { 
+            let val = parseFloat(v) || 0; 
+            if(t==='qty') { bmsData[i].qty = val; recalc(); } 
+            else { bmsData[i].price = val; calcTot(); }
+        }
+        function updMeta(i, f, v) { bmsData[i][f] = v; }
+        
+        function recalc() {
+            const m = parseFloat(document.getElementById('cableMetric').value) || 30;
+            let ai=0, ao=0, gw=0, ddc=0, sen=0;
+            bmsData.forEach(d => {
+                if(d.type==='ddc') { ai+=d.qty*d.ai; ao+=d.qty*d.ao; ddc+=d.qty; }
+                if(d.id==='gw') gw+=d.qty;
+                if(['temp','humid','co2','valve','dps','dps_sw','oil','water_lvl','press','co'].includes(d.id)) sen+=d.qty;
+            });
+            
+            const cab = {
+                'cab_stp': (ai+ao)*m + gw*17*m,
+                'cab_pwr': (ai+ao)*m*2 + sen*m,
+                'cab_cat6': (ddc+1)*m,
+                'acc': 0 // calc below
+            };
+            cab.acc = (cab.cab_stp + cab.cab_pwr + cab.cab_cat6) * 0.15;
+
+            for(let k in cab) {
+                let idx = bmsData.findIndex(x => x.id === k);
+                if(idx>-1) {
+                    bmsData[idx].qty = Math.round(cab[k]);
+                    let el = document.getElementById(`qty-d-${idx}`);
+                    if(el) el.innerText = Math.round(cab[k]);
+                }
+            }
+            calcTot();
+        }
+
+        function calcTot() {
+            let eq = 0;
+            bmsData.forEach((d, i) => {
+                if(!d.header) {
+                    let tot = (d.qty||0)*(d.price||0);
+                    eq += tot;
+                    let el = document.getElementById(`total-${i}`);
+                    if(el) el.innerText = fmt(tot);
+                }
+            });
+
+            const r1 = parseFloat(document.getElementById('installRate').value)/100 || 0;
+            const r2 = parseFloat(document.getElementById('engRate').value)/100 || 0;
+            const r3 = parseFloat(document.getElementById('contigencyRate').value)/100 || 0;
+            
+            const c1 = eq*r1, c2 = eq*r2, sum = eq+c1+c2, c3 = sum*r3;
+            
+            document.getElementById('sumEquipment').innerText = fmt(eq);
+            document.getElementById('sumInstall').innerText = fmt(c1);
+            document.getElementById('sumEng').innerText = fmt(c2);
+            document.getElementById('sumContingency').innerText = fmt(c3);
+            document.getElementById('grandTotal').innerText = fmt(sum+c3);
+        }
+
+        function updateSoftwareSpec() {
+            const txt = document.getElementById('softwareSelect').value;
+            const idx = bmsData.findIndex(x => x.id === 'sw');
+            if(idx>-1) { bmsData[idx].spec = txt; renderTable(); }
+        }
+
+        function resetPrices() {
+            if(confirm("Reset đơn giá về 0?")) {
+                bmsData.forEach(d => { if(!d.header) d.price=0; });
+                renderTable();
+            }
+        }
+
+        function exportToExcel() {
+            const pName = document.getElementById('projName').value || 'Project';
+            const data = [
+                ["NAM HOÀNG CONTROLS - BOQ ESTIMATE"],
+                ["Dự án:", pName, "Ngày:", document.getElementById('dateInput').value],
+                [""],
+                ["STT", "Mô tả", "Thông số", "ĐVT", "SL", "Đơn giá", "Thành tiền", "Ghi chú"]
+            ];
+            let k=1;
+            bmsData.forEach(d => {
+                if(d.header) data.push([d.header + ". " + d.title]);
+                else data.push([k++, d.name, d.spec, d.unit, d.qty, d.price, (d.qty*d.price), d.note]);
+            });
+            data.push(["","","","","","",""]);
+            data.push(["","TỔNG CỘNG","","","",document.getElementById('grandTotal').innerText]);
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:5}, {wch:40}, {wch:40}, {wch:10}, {wch:10}, {wch:15}, {wch:20}, {wch:20}];
+            XLSX.utils.book_append_sheet(wb, ws, "BOQ");
+            XLSX.writeFile(wb, `BOQ_${pName}.xlsx`);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('printDateDisplay').innerText = new Date().toLocaleDateString('vi-VN');
+            renderTable();
+        });
+    </script>
+</body>
+</html>
