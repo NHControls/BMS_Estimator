@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BMS Master Estimator v2.3.1 - Nam Hoàng Controls</title>
+    <title>BMS_Estimator v2.5 - Nam Hoàng Controls</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
@@ -42,16 +42,13 @@
 
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
 
-        /* Compact Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         
-        /* Input Reset */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Custom Header Input */
         .header-project-input {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -63,7 +60,6 @@
             outline: none;
         }
 
-        /* Logo Bar Animation & Style */
         .logo-bars {
             display: flex;
             align-items: flex-end;
@@ -81,7 +77,7 @@
             .no-print { display: none !important; }
             .main-col { width: 100% !important; max-width: 100% !important; }
             .sidebar-col { display: none !important; }
-            input, textarea { border: none !important; resize: none; }
+            input, select, textarea { border: none !important; resize: none; appearance: none; background: transparent; }
             .print-bg-header { background-color: #f1f5f9 !important; border-bottom: 2px solid #0f172a; }
         }
     </style>
@@ -94,13 +90,14 @@
             
             <!-- LEFT: BRAND IDENTITY -->
             <div class="flex items-center gap-3 w-1/3 min-w-fit">
-                <div class="bg-white px-2.5 py-1.5 rounded-lg shadow-sm h-11 flex items-center justify-center shrink-0">
-                    <div class="logo-bars">
+                <!-- Logo Bars (Transparent BG, matching Footer) -->
+                <div class="flex items-center justify-center shrink-0 pr-1">
+                    <div class="logo-bars opacity-90 scale-100 origin-left">
                         <div class="bar" style="height: 14px; background-color: #5eead4;"></div>
                         <div class="bar" style="height: 20px; background-color: var(--teal);"></div>
-                        <div class="bar" style="height: 30px; background-color: var(--navy);"></div>
+                        <div class="bar" style="height: 30px; background-color: white;"></div>
                         <div class="bar" style="height: 40px; background-color: var(--yellow);"></div>
-                        <div class="bar" style="height: 24px; background-color: var(--navy);"></div>
+                        <div class="bar" style="height: 24px; background-color: white;"></div>
                     </div>
                 </div>
                 <div class="leading-tight flex flex-col justify-center">
@@ -119,10 +116,10 @@
                 </div>
             </div>
 
-            <!-- RIGHT: ACTIONS -->
+            <!-- RIGHT: ACTIONS & TOOL INFO -->
             <div class="flex items-center justify-end gap-3 w-1/3">
-                <div class="hidden xl:flex items-center gap-2 mr-2 text-[10px] text-slate-400 font-mono border-r border-slate-700 pr-3">
-                    <i class="fa-solid fa-code-branch"></i> v2.3.1 Fixed
+                <div class="hidden xl:flex items-center gap-2 mr-2 text-[11px] text-slate-300 font-mono border-r border-slate-700 pr-3">
+                    <i class="fa-solid fa-microchip text-nhc-teal"></i> <span class="font-bold text-white tracking-wider">BMS_Estimator</span> <span class="text-nhc-gold">v2.5</span>
                 </div>
                 <button onclick="exportToExcel()" class="bg-nhc-gold hover:bg-yellow-400 text-nhc-navy text-xs font-bold px-4 py-2 rounded shadow transition flex items-center gap-2 group">
                     <i class="fa-solid fa-file-excel group-hover:scale-110 transition-transform"></i>
@@ -157,14 +154,14 @@
                 </div>
             </div>
             <div class="text-right">
-                <h2 class="text-4xl font-black text-slate-800 uppercase">BOQ Estimate</h2>
+                <h2 class="text-4xl font-black text-slate-800 uppercase">BMS_Estimator v2.5</h2>
                 <p class="text-sm font-medium text-nhc-blue mt-1" id="printDateDisplay"></p>
             </div>
         </div>
     </div>
 
     <!-- MAIN CONTENT -->
-    <div class="max-w-[1600px] mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div class="max-w-[1600px] mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-grow">
 
         <!-- LEFT: TABLE -->
         <div class="lg:col-span-9 main-col space-y-6">
@@ -172,7 +169,7 @@
             <input type="date" id="dateInput" class="hidden">
 
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto pb-10">
                     <table class="w-full text-sm text-left border-collapse">
                         <thead class="bg-slate-800 text-white uppercase font-bold text-[10px] tracking-wide">
                             <tr>
@@ -215,7 +212,7 @@
                     
                     <div class="space-y-3 text-xs">
                         <div class="flex justify-between text-slate-500">
-                            <span>Vật tư (A-E):</span>
+                            <span>Vật tư (A-F):</span>
                             <span class="font-bold text-slate-800" id="sumEquipment">0</span>
                         </div>
                         <div class="border-t border-slate-100 my-2"></div>
@@ -262,7 +259,6 @@
                     <div class="space-y-3">
                         <div>
                             <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Dây / Điểm (m)</label>
-                            <!-- FIXED: Function call matches JS name -->
                             <input type="number" id="cableMetric" value="30" oninput="recalcCables()" class="w-full bg-slate-700 border-none rounded px-2 py-1 text-xs font-bold text-white focus:ring-1 focus:ring-nhc-teal">
                         </div>
                         <div>
@@ -281,9 +277,72 @@
         </div>
     </div>
 
+    <!-- FOOTER COMPANY INFO & LINKS -->
+    <footer class="bg-nhc-navy text-white mt-auto no-print border-t border-slate-700 pt-8 pb-6">
+        <div class="max-w-[1600px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            
+            <!-- Company Detail -->
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="logo-bars opacity-80 scale-75 origin-left">
+                        <div class="bar" style="height: 14px; background-color: #5eead4;"></div>
+                        <div class="bar" style="height: 20px; background-color: var(--teal);"></div>
+                        <div class="bar" style="height: 30px; background-color: white;"></div>
+                        <div class="bar" style="height: 40px; background-color: var(--yellow);"></div>
+                        <div class="bar" style="height: 24px; background-color: white;"></div>
+                    </div>
+                    <h2 class="text-xl font-black uppercase tracking-widest text-white">NAM HOÀNG CONTROLS</h2>
+                </div>
+                <p class="text-nhc-teal font-mono text-sm mb-3">EST. 15 YEARS IN BMS AND T&C</p>
+                <div class="flex items-center gap-2 text-slate-400 text-sm hover:text-white transition w-fit">
+                    <i class="fa-solid fa-globe"></i>
+                    <a href="http://www.namhoangcontrols.com" target="_blank">www.namhoangcontrols.com</a>
+                </div>
+            </div>
+
+            <!-- Training Links -->
+            <div class="md:border-l md:border-slate-700 md:pl-8">
+                <h3 class="font-bold text-sm text-nhc-gold mb-3 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap"></i> Chương trình Đào tạo Chuyên sâu
+                </h3>
+                <ul class="space-y-2 text-sm text-slate-300">
+                    <li>
+                        <a href="https://nhcontrols.github.io/BMS-training-for-building-technician/" target="_blank" class="hover:text-white transition flex items-center gap-2">
+                            <i class="fa-solid fa-wrench w-4 text-nhc-teal text-center"></i>
+                            Đào tạo BMS cho Kỹ thuật bảo trì
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://nhcontrols.github.io/BMS-Training-for-PM/" target="_blank" class="hover:text-white transition flex items-center gap-2">
+                            <i class="fa-solid fa-user-tie w-4 text-nhc-teal text-center"></i>
+                            Đào tạo BMS cho Giám sát, Quản lý dự án
+                        </a>
+                    </li>
+                    <li class="pt-2">
+                        <a href="https://forms.gle/XsjRh7xzG7L8dCmX7" target="_blank" class="inline-flex items-center gap-2 text-nhc-navy bg-nhc-gold hover:bg-yellow-400 px-3 py-1.5 rounded text-xs font-bold transition shadow-sm">
+                            <i class="fa-solid fa-pen-to-square"></i> Form Đăng ký đào tạo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-[1600px] mx-auto px-6 mt-8 pt-4 border-t border-slate-800 text-center text-[10px] text-slate-500 font-mono">
+            &copy; 2024 Nam Hoang Controls. All rights reserved. Professional Estimation Tool v2.5.
+        </div>
+    </footer>
+
     <!-- JAVASCRIPT -->
     <script>
-        const sectionIcons = { "A": "fa-server", "B": "fa-network-wired", "C": "fa-temperature-high", "D": "fa-microchip", "E": "fa-bezier-curve" };
+        const sectionIcons = { 
+            "A": "fa-server", 
+            "B": "fa-plug", 
+            "C": "fa-temperature-high", 
+            "D": "fa-microchip", 
+            "E": "fa-network-wired", 
+            "F": "fa-bezier-curve" 
+        };
+
+        const hliProtocols = ["BACnet IP", "SNMP", "Modbus TCP", "API", "Access link", "OPC"];
 
         let bmsData = [
             { header: "A", title: "THIẾT BỊ PHÒNG ĐIỀU KHIỂN TRUNG TÂM" },
@@ -295,7 +354,7 @@
             { id: "ups", name: "UPS Online 3kVA", spec: "True Online, Sinewave\nBackup: 15 mins", unit: "Bộ", qty: 1, note: "Rackmount" },
             { id: "printer", name: "Máy in Laser màu", spec: "In mạng LAN, khổ A4", unit: "Bộ", qty: 1, note: "" },
 
-            { header: "B", title: "THIẾT BỊ ĐO ĐẾM & TÍCH HỢP" },
+            { header: "B", title: "THIẾT BỊ ĐO ĐẾM & TÍCH HỢP TRỰC TIẾP" },
             { id: "gw", name: "Modbus Gateway", spec: "RS485 to IP, 2 Port, Industrial", unit: "Bộ", qty: 5, note: "Max 32 dev/port" },
             { id: "pm", name: "Đồng hồ điện 3 pha", spec: "Modbus RTU, Class 0.5S", unit: "Bộ", qty: 5, note: "Power Monitoring" },
             { id: "wm", name: "Đồng hồ nước (Smart)", spec: "Giao tiếp Modbus/Pulse, IP68", unit: "Bộ", qty: 5, note: "" },
@@ -314,11 +373,17 @@
             { id: "ddc2", type: "ddc", name: "Tủ DDC Loại 2 (Medium)", spec: "Vỏ tủ sơn tĩnh điện\nController chuẩn BACnet/IP", unit: "Tủ", qty: 5, di: 16, do: 8, ai: 8, ao: 4, hli: 1, note: "AHU/Pump" },
             { id: "ddc3", type: "ddc", name: "Tủ DDC Loại 3 (Large)", spec: "Vỏ tủ Form 2B\nController chuẩn BACnet/IP", unit: "Tủ", qty: 5, di: 24, do: 12, ai: 16, ao: 8, hli: 2, note: "Chiller Plant" },
 
-            { header: "E", title: "CÁP TÍN HIỆU (AUTO-SIZING)" },
+            { header: "E", title: "HỆ THỐNG TÍCH HỢP GIAO TIẾP BẬC CAO (HLI)" },
+            { id: "hli_fa", type: "hli", name: "Hệ thống Báo cháy (Fire Alarm)", spec: "BACnet IP", unit: "Hệ", qty: 1, note: "Software Integration" },
+            { id: "hli_ac", type: "hli", name: "Hệ thống Kiểm soát vào ra (Access Control)", spec: "API", unit: "Hệ", qty: 1, note: "" },
+            { id: "hli_cctv", type: "hli", name: "Hệ thống Camera An ninh (CCTV)", spec: "API", unit: "Hệ", qty: 1, note: "" },
+            { id: "hli_elev", type: "hli", name: "Hệ thống Thang máy (Elevator)", spec: "BACnet IP", unit: "Hệ", qty: 1, note: "" },
+
+            { header: "F", title: "CÁP TÍN HIỆU (AUTO-SIZING)" },
             { id: "cab_stp", type: "cable", name: "Cáp STP - AWG18", spec: "1x2x18AWG Shielded Twisted Pair", unit: "Mét", qty: 0, note: "Modbus/AI" },
             { id: "cab_pwr", type: "cable", name: "Dây đơn 1x1.5mm2", spec: "Cu/PVC/PVC, Standard IEC", unit: "Mét", qty: 0, note: "Power/DI/DO" },
-            { id: "cab_cat6", type: "cable", name: "Cáp mạng UTP CAT6", spec: "CAT6 UTP 4-Pair 23AWG", unit: "Mét", qty: 0, note: "Network" },
-            { id: "acc", type: "acc", name: "Vật tư phụ", spec: "Ống, máng, đầu cos, lạt thít...", unit: "Gói", qty: 0, note: "15% Cable" }
+            { id: "cab_cat6", type: "cable", name: "Cáp mạng UTP CAT6", spec: "CAT6 UTP 4-Pair 23AWG", unit: "Mét", qty: 0, note: "Cấp mạng DDC + HLI" },
+            { id: "acc", type: "acc", name: "Vật tư phụ", spec: "Ống, máng, cos, lạt thít (Tự động tính 20% Cáp)", unit: "Gói", qty: 1, note: "Tự động = 20% Dây cáp" }
         ];
 
         const fmt = (num) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(num);
@@ -335,7 +400,7 @@
                         <tr class="bg-slate-50 border-t border-slate-200 no-hover">
                             <td colspan="7" class="py-2 px-4">
                                 <div class="flex items-center gap-2 text-nhc-blue font-bold">
-                                    <div class="w-6 h-6 rounded bg-nhc-blue text-white flex items-center justify-center text-xs">${item.header}</div>
+                                    <div class="w-6 h-6 rounded bg-nhc-blue text-white flex items-center justify-center text-xs shadow-sm">${item.header}</div>
                                     <span class="text-xs uppercase tracking-wider">${item.title}</span>
                                     <i class="fa-solid ${icon} ml-auto text-slate-300 text-sm"></i>
                                 </div>
@@ -344,58 +409,73 @@
                 } else {
                     if (!item.price) item.price = 0;
                     
-                    let configHtml = '';
+                    let specAndConfigHtml = '';
+
+                    if (item.type === 'hli') {
+                        const options = hliProtocols.map(opt => `<option value="${opt}" ${item.spec === opt ? 'selected' : ''}>Giao thức: ${opt}</option>`).join('');
+                        specAndConfigHtml = `
+                            <select class="text-[11px] font-mono text-nhc-blue w-full bg-slate-50 border border-slate-200 focus:border-nhc-blue focus:ring-1 focus:ring-nhc-blue rounded p-1.5 mt-1 cursor-pointer outline-none transition" onchange="updMeta(${index}, 'spec', this.value)">
+                                ${options}
+                            </select>`;
+                    } else {
+                        specAndConfigHtml = `<textarea rows="1" class="text-[11px] text-slate-500 w-full bg-transparent resize-y focus:bg-white focus:ring-1 focus:ring-slate-200 rounded p-1 transition" onchange="updMeta(${index}, 'spec', this.value)">${item.spec}</textarea>`;
+                    }
+
                     if (item.type === 'ddc') {
-                        configHtml = `
+                        specAndConfigHtml += `
                             <div class="mt-1 flex gap-1 no-print overflow-x-auto">
                                 ${['di','do','ai','ao','hli'].map(t => `
-                                <div class="flex items-center border rounded px-1 bg-white">
+                                <div class="flex items-center border rounded px-1 bg-white shadow-sm">
                                     <span class="text-[8px] font-bold text-slate-400 uppercase mr-1">${t}</span>
-                                    <input type="number" value="${item[t]}" oninput="updateDDCIO(${index}, '${t}', this.value)" class="w-5 text-center text-[10px] font-bold focus:outline-none">
+                                    <input type="number" value="${item[t]}" oninput="updateDDCIO(${index}, '${t}', this.value)" class="w-6 text-center text-[10px] font-bold text-nhc-blue focus:outline-none py-0.5">
                                 </div>`).join('')}
                             </div>
-                            <div class="hidden print:block text-[10px] text-slate-500 italic">[${item.di}DI/${item.do}DO/${item.ai}AI/${item.ao}AO/${item.hli}HLI]</div>`;
+                            <div class="hidden print:block text-[10px] text-slate-500 italic mt-1">[${item.di}DI/${item.do}DO/${item.ai}AI/${item.ao}AO/${item.hli}HLI]</div>`;
                     }
 
                     let qtyHtml = '';
                     if (item.type === 'cable' || item.type === 'acc') {
-                        // FIXED: ID matching the updateCableItem logic
-                        qtyHtml = `<div id="qty-d-${index}" class="text-center font-bold text-nhc-teal text-xs select-none">${Math.round(item.qty)}</div>`;
+                        qtyHtml = `<div id="qty-d-${index}" class="text-center font-bold text-nhc-teal text-xs select-none">${item.qty}</div>`;
                     } else {
                         qtyHtml = `
                             <div class="flex items-center justify-center gap-1 no-print">
-                                <button onclick="adjQty(${index}, -1)" class="text-slate-400 hover:text-red-500 font-bold px-1">-</button>
-                                <input id="qty-i-${index}" type="number" value="${item.qty}" class="w-8 text-center border-b border-transparent hover:border-blue-400 focus:border-blue-500 font-bold text-xs bg-transparent p-0" oninput="updRow(${index}, this.value, 'qty')">
-                                <button onclick="adjQty(${index}, 1)" class="text-slate-400 hover:text-green-500 font-bold px-1">+</button>
+                                <button onclick="adjQty(${index}, -1)" class="text-slate-400 hover:text-red-500 font-bold px-1.5 py-1 transition">-</button>
+                                <input id="qty-i-${index}" type="number" value="${item.qty}" class="w-10 text-center border-b border-transparent hover:border-blue-400 focus:border-blue-500 font-bold text-xs bg-transparent p-0 transition" oninput="updRow(${index}, this.value, 'qty')">
+                                <button onclick="adjQty(${index}, 1)" class="text-slate-400 hover:text-green-500 font-bold px-1.5 py-1 transition">+</button>
                             </div>
                             <span class="hidden print:block text-center font-bold text-xs">${Math.round(item.qty)}</span>`;
                     }
 
+                    let priceHtml = '';
+                    if (item.id === 'acc') {
+                        priceHtml = `<input type="number" id="price-${index}" readonly class="w-full text-right bg-slate-100 text-nhc-teal font-bold border-transparent rounded text-xs py-1 px-2 cursor-not-allowed" value="${item.price || 0}" title="Auto: 20% Giá trị Cáp">`;
+                    } else {
+                        priceHtml = `<input type="number" id="price-${index}" placeholder="0" class="w-full text-right bg-transparent focus:bg-white border-transparent hover:border-slate-200 focus:border-nhc-blue border rounded text-xs font-medium py-1 px-2 transition" value="${item.price || ''}" oninput="updRow(${index}, this.value, 'price')">`;
+                    }
+
                     tbody.innerHTML += `
                         <tr class="hover:bg-blue-50/50 border-b border-slate-100 last:border-0 group">
-                            <td class="px-3 py-3 text-center text-slate-400 text-xs border-r border-slate-50">${stt++}</td>
-                            <td class="px-4 py-3 border-r border-slate-50">
-                                <input type="text" value="${item.name}" class="font-bold text-slate-700 w-full bg-transparent focus:text-nhc-blue text-xs mb-0.5" onchange="updMeta(${index}, 'name', this.value)">
-                                <textarea rows="1" class="text-[11px] text-slate-500 w-full bg-transparent resize-y focus:bg-white rounded" onchange="updMeta(${index}, 'spec', this.value)">${item.spec}</textarea>
-                                ${configHtml}
+                            <td class="px-3 py-3 text-center text-slate-400 text-xs border-r border-slate-50 align-top pt-4">${stt++}</td>
+                            <td class="px-4 py-3 border-r border-slate-50 align-top">
+                                <input type="text" value="${item.name}" class="font-bold text-slate-700 w-full bg-transparent focus:text-nhc-blue text-xs mb-1 transition" onchange="updMeta(${index}, 'name', this.value)">
+                                ${specAndConfigHtml}
                             </td>
-                            <td class="px-2 py-3 text-center text-xs text-slate-500 border-r border-slate-50">${item.unit}</td>
-                            <td class="px-2 py-3 border-r border-slate-50">${qtyHtml}</td>
-                            <td class="px-3 py-3 text-right border-r border-slate-50">
-                                <input type="number" placeholder="0" class="w-full text-right bg-transparent focus:bg-white border-transparent hover:border-slate-200 focus:border-nhc-blue border rounded text-xs font-medium" value="${item.price || ''}" oninput="updRow(${index}, this.value, 'price')">
+                            <td class="px-2 py-3 text-center text-xs text-slate-500 border-r border-slate-50 align-top pt-4">${item.unit}</td>
+                            <td class="px-2 py-3 border-r border-slate-50 align-top pt-3">${qtyHtml}</td>
+                            <td class="px-3 py-3 text-right border-r border-slate-50 align-top pt-3">
+                                ${priceHtml}
                             </td>
-                            <td class="px-3 py-3 text-right font-bold text-slate-800 text-xs border-r border-slate-50" id="total-${index}">0</td>
-                            <td class="px-3 py-3 hidden xl:table-cell">
-                                <textarea rows="1" class="w-full bg-transparent text-xs text-right text-slate-400 focus:text-slate-600 resize-none" onchange="updMeta(${index}, 'note', this.value)">${item.note}</textarea>
+                            <td class="px-3 py-3 text-right font-bold text-slate-800 text-xs border-r border-slate-50 align-top pt-4" id="total-${index}">0</td>
+                            <td class="px-3 py-3 hidden xl:table-cell align-top">
+                                <textarea rows="1" class="w-full bg-transparent text-[11px] text-right text-slate-400 focus:text-slate-600 resize-none pt-1" onchange="updMeta(${index}, 'note', this.value)">${item.note}</textarea>
                             </td>
                         </tr>`;
                 }
             });
             document.getElementById('dateInput').valueAsDate = new Date();
-            recalcCables(); // FIXED: Initial calculation call
+            recalcCables(); 
         }
 
-        // Logic - RENAMED to match HTML calls (recalcCables)
         function updateDDCIO(i, t, v) { bmsData[i][t] = parseFloat(v) || 0; recalcCables(); }
         
         function adjQty(i, d) { 
@@ -419,23 +499,21 @@
 
         function updMeta(i, f, v) { bmsData[i][f] = v; }
         
-        // FIXED: Renamed function back to 'recalcCables' to match HTML onclick attribute
         function recalcCables() {
             const m = parseFloat(document.getElementById('cableMetric').value) || 30;
-            let ai=0, ao=0, gw=0, ddc=0, sen=0;
+            let ai=0, ao=0, gw=0, ddc=0, sen=0, hli_nodes=0;
             bmsData.forEach(d => {
                 if(d.type==='ddc') { ai+=d.qty*d.ai; ao+=d.qty*d.ao; ddc+=d.qty; }
                 if(d.id==='gw') gw+=d.qty;
                 if(['temp','humid','co2','valve','dps','dps_sw','oil','water_lvl','press','co'].includes(d.id)) sen+=d.qty;
+                if(d.type==='hli') hli_nodes+=d.qty; // Đếm số lượng hệ HLI để kéo dây LAN
             });
             
             const cab = {
                 'cab_stp': (ai+ao)*m + gw*17*m,
                 'cab_pwr': (ai+ao)*m*2 + sen*m,
-                'cab_cat6': (ddc+1)*m,
-                'acc': 0 
+                'cab_cat6': (ddc + hli_nodes + 1)*m
             };
-            cab.acc = (cab.cab_stp + cab.cab_pwr + cab.cab_cat6) * 0.15;
 
             for(let k in cab) {
                 let idx = bmsData.findIndex(x => x.id === k);
@@ -445,13 +523,31 @@
                     if(el) el.innerText = Math.round(cab[k]);
                 }
             }
+            // Không tính toán acc qty ở đây, chuyển logic tiền vào calcTot
             calcTot();
         }
 
         function calcTot() {
             let eq = 0;
+            let cableTotal = 0;
+
+            // Step 1: Tính tổng tiền dây cáp
+            bmsData.forEach((d) => {
+                if (['cab_stp', 'cab_pwr', 'cab_cat6'].includes(d.id)) {
+                    cableTotal += (d.qty || 0) * (d.price || 0);
+                }
+            });
+
+            // Step 2: Tính toán tiền Vật tư phụ (ACC) & Tổng toàn bộ
             bmsData.forEach((d, i) => {
                 if(!d.header) {
+                    if (d.id === 'acc') {
+                        d.qty = 1;
+                        d.price = cableTotal * 0.20; // 20% giá trị dây cáp
+                        let priceEl = document.getElementById(`price-${i}`);
+                        if(priceEl) priceEl.value = d.price;
+                    }
+
                     let tot = (d.qty||0)*(d.price||0);
                     eq += tot;
                     let el = document.getElementById(`total-${i}`);
@@ -479,19 +575,19 @@
         }
 
         function resetPrices() {
-            if(confirm("Reset đơn giá về 0?")) {
-                bmsData.forEach(d => { if(!d.header) d.price=0; });
+            if(confirm("Xác nhận Reset toàn bộ đơn giá về 0?")) {
+                bmsData.forEach(d => { if(!d.header && d.id !== 'acc') d.price=0; });
                 renderTable();
             }
         }
 
         function exportToExcel() {
-            const pName = document.getElementById('projName').value || 'Project';
+            const pName = document.getElementById('projName').value || 'Project_BMS';
             const data = [
                 ["NAM HOÀNG CONTROLS - BOQ ESTIMATE"],
                 ["Dự án:", pName, "Ngày:", document.getElementById('dateInput').value],
                 [""],
-                ["STT", "Mô tả", "Thông số", "ĐVT", "SL", "Đơn giá", "Thành tiền", "Ghi chú"]
+                ["STT", "Mô tả", "Thông số / Giao thức", "ĐVT", "SL", "Đơn giá", "Thành tiền", "Ghi chú"]
             ];
             let k=1;
             bmsData.forEach(d => {
@@ -503,9 +599,9 @@
 
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(data);
-            ws['!cols'] = [{wch:5}, {wch:40}, {wch:40}, {wch:10}, {wch:10}, {wch:15}, {wch:20}, {wch:20}];
+            ws['!cols'] = [{wch:5}, {wch:45}, {wch:40}, {wch:10}, {wch:10}, {wch:15}, {wch:20}, {wch:25}];
             XLSX.utils.book_append_sheet(wb, ws, "BOQ");
-            XLSX.writeFile(wb, `BOQ_${pName}.xlsx`);
+            XLSX.writeFile(wb, `BOQ_BMS_${pName}.xlsx`);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
